@@ -8,17 +8,22 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 )
 
 func main() {
-	const wall = 20            // $
-	coins := [3]int{5, 10, 25} //cents
-	piggyBank := 0
-	for piggyBank < wall*100 {
-		piggyBank += coins[rand.Intn(3)]
-		dollars := piggyBank / 100
-		fmt.Printf("В банке: $%v\n", dollars)
-	}
+	piggyBank := 0.0
 
+	for piggyBank < 20.00 {
+		switch rand.Intn(3) {
+		case 0:
+			piggyBank += 0.05
+		case 1:
+			piggyBank += 0.10
+		case 2:
+			piggyBank += 0.25
+		}
+		fmt.Printf("В банке $%5.2f\n", piggyBank)
+	}
 }
