@@ -14,7 +14,7 @@ import (
 func main() {
 	piggyBank := 0
 
-	for piggyBank < 2000 {
+	for piggyBank < 2500 {
 		switch rand.Intn(3) {
 		case 0:
 			piggyBank += 5
