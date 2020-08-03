@@ -26,12 +26,13 @@ func main() {
 	for i := 0; i < len(cipherText); i++ {
 		// 'A' = 1, 'Z' = 26
 
-		c := cipherText[i%len(cipherText)] - (keyword[i%len(keyword)] - 65)
+		c := cipherText[i%len(cipherText)] - (keyword[i%len(keyword)] - 'A')
+		if c < 'A' {
+			c += 26
+		}
 
 		fmt.Printf("%c %[1]v\n", c)
-		fmt.Printf("%c\n", c)
 		word += string(c)
-
 	}
 	fmt.Println(word)
 }
