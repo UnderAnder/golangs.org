@@ -16,13 +16,16 @@ func (f fahrenheit) celsius() celsius {
 
 type sensor func(t celsius) (string, string)
 
-func drawTable(header1, header2 string, rows celsius, s sensor) {
+func drawTable(header1, header2 string, tempMin, tempMax, step celsius, s sensor) {
 	line := "===============\n"
+	pattern := "|%6v|%6v|\n"
 	fmt.Printf(line)
-	fmt.Printf("| %4v | %4v |\n", header1, header2)
-	for row := 0; row < int(rows); row++ {
-		cell1, cell2 := s(rows)
-		fmt.Printf("| %4v | %4v |\n", cell1, cell2)
+	fmt.Printf(pattern, header1, header2)
+	rows := (tempMax - tempMin) / step
+	for row := 0; row <= int(rows); row++ {
+		cell1, cell2 := s(tempMin)
+		fmt.Printf(pattern, cell1, cell2)
+		tempMin += step
 	}
 	fmt.Printf(line)
 }
@@ -33,14 +36,14 @@ func ctof(temp celsius) (string, string) {
 	return cell1, cell2
 }
 
-func main() {
-	var temp celsius = 40
-	drawTable("°F", "°C", temp, ctof)
+func ftoc(temp celsius) (string, string) {
+	cell1 := fmt.Sprintf("%v", temp.fahrenheit())
+	cell2 := fmt.Sprintf("%v", temp)
+	return cell1, cell2
+}
 
-	/* 	for temp = 40; temp < 100; temp += 5 {
-	   		fmt.Printf("| %v   | %v  |\n", temp, temp.fahrenheit())
-	   	}
-	   	for temp = 40; temp < 100; temp += 5 {
-	   		fmt.Printf("| %v   | %v  |\n", temp.fahrenheit(), temp)
-	   	} */
+func main() {
+	var tempMin, tempMax, step celsius = -40, 100, 5
+	drawTable("°C", "°F", tempMin, tempMax, step, ctof)
+	drawTable("°F", "°C", tempMin, tempMax, step, ftoc)
 }
