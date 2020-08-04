@@ -2,24 +2,25 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
-// terraform ни к чему не приводит
-func terraform(planets []string) {
-	for i := range planets {
-		planets[i] = "Новый " + planets[i]
+type planets []string
+
+func (c planets) terraform() {
+	for i := range c {
+		c[i] = "Новый " + c[i]
 	}
 }
 
 func main() {
-	planets := []string{
+	solsys := planets{
 		"Меркурий", "Венера", "Земля", "Марс",
 		"Юпитер", "Сатурн", "Уран", "Нептун",
 	}
 
 	//sort.Strings(planets)
-	terraform(planets[3:7])
-	sort.StringSlice(planets).Sort() // Сортирует planets в алфавитном порядке
-	fmt.Println(planets)             // Выводит: [Венера Земля Марс Меркурий Нептун Сатурн Уран Юпитер]
+	//sort.StringSlice(solsys).Sort() // Сортирует planets в алфавитном порядке
+	solsys[3:4].terraform()
+	solsys[6:].terraform()
+	fmt.Println(solsys) // Выводит: [Венера Земля Марс Меркурий Нептун Сатурн Уран Юпитер]
 }
