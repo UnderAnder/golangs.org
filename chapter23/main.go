@@ -19,6 +19,12 @@ type location struct {
 	Long float64 `json:"Longitude"`
 }
 
+type place struct {
+	Name     string
+	World    world
+	Location location
+}
+
 var (
 	mars  = world{radius: 3389.5}
 	earth = world{radius: 6371}
@@ -57,16 +63,22 @@ func newLocation(lat, long coordinate) location {
 }
 
 func main() {
+
 	spirit := newLocation(coordinate{14, 34, 6.2, 'S'}, coordinate{175, 28, 21.5, 'E'})
 	opportunity := newLocation(coordinate{1, 56, 46.3, 'S'}, coordinate{354, 28, 24.2, 'E'})
 	curiosity := newLocation(coordinate{4, 35, 22.2, 'S'}, coordinate{137, 26, 30.12, 'E'})
 	insight := newLocation(coordinate{4, 30, 0.0, 'N'}, coordinate{135, 54, 0, 'E'})
+	places := []place{
+		{Name: "Spirit", World: mars, Location: spirit},
+		{Name: "opportunity", World: mars, Location: opportunity},
+		{Name: "curiosity", World: mars, Location: curiosity},
+		{Name: "insight", World: mars, Location: insight},
+	}
 
 	dist := mars.distance(spirit, opportunity) // Использует метод distance для mars
 	fmt.Printf("%.2f km\n", dist)              // Выводит: 9669.71 km
 
-	fmt.Println("Spirit", spirit)
-	fmt.Println("Opportunity", opportunity)
-	fmt.Println("Curiosity", curiosity)
-	fmt.Println("InSight", insight)
+	for _, c := range places {
+		fmt.Println(c)
+	}
 }
