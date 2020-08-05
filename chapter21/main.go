@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -13,6 +14,7 @@ const (
 type Universe [][]bool
 
 func (u Universe) Show() {
+	fmt.Print("\x0c")
 	for _, k := range u {
 		for _, v := range k {
 			if v {
@@ -23,6 +25,7 @@ func (u Universe) Show() {
 		}
 		fmt.Println()
 	}
+
 }
 
 func (u Universe) Seed() {
@@ -32,21 +35,16 @@ func (u Universe) Seed() {
 }
 
 func (u Universe) Set(x, y int, b bool) {
-	if y > height {
-		y = y % height
-	}
-	if x > width {
-		x = x % width
-	}
 	u[y][x] = b
 }
 
 func (u Universe) Alive(x, y int) bool {
-	if u[y][x] == true {
-		return true
-	} else {
-		return false
-	}
+	x += width
+	x %= width
+	y += height
+	y %= height
+
+	return u[y][x]
 }
 
 func (u Universe) Neighbors(x, y int) int {
@@ -79,19 +77,9 @@ func (u Universe) Next(x, y int) bool {
 }
 
 func Step(a, b Universe) {
-	for i := 0; i < height; i++ {
-		for j := 0; j < width; j++ {
-			a.Neighbors(i,j)
-			b.Next(i, j)
-		}
-	}
-
-	a, b = b, a
-
-	for i := 0; i < height; i++ {
-		for j := 0; j < width; j++ {
-			a.Neighbors(i,j)
-			b.Next(i, j)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			b.Set(x, y, a.Next(x, y))
 		}
 	}
 }
@@ -107,10 +95,13 @@ func NewUniverse() Universe {
 }
 
 func main() {
-	world := NewUniverse()
-	world.Seed()
-	world.Show()
+	a, b := NewUniverse(), NewUniverse()
+	a.Seed()
 
-	fmt.Println(world.Neighbors(5, 5))
-	fmt.Println(world.Next(5, 5))
+	for i := 0; i < 300; i++ {
+		Step(a, b)
+		a.Show()
+		time.Sleep(time.Second / 30)
+		a, b = b, a // Swap universes
+	}
 }
