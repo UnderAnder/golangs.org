@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 )
 
 type coordinate struct {
@@ -16,12 +18,31 @@ func (c coordinate) String() string {
 
 // location с широтой и долготой в десятичных градусах
 type location struct {
-	lat, long coordinate
+	Lat  coordinate `json:"latitude"`
+	Long coordinate `json:"longitude"`
 }
 
 // String форматирует location с широтой и долготой
 func (l location) String() string {
-	return fmt.Sprintf("%v, %v", l.lat, l.long)
+	return fmt.Sprintf("%v, %v", l.Lat, l.Long)
+}
+
+func (c coordinate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		DD  float64 `json:"decimal"`
+		DMS string  `json:"dms"`
+		D   float64 `json:"degrees"`
+		M   float64 `json:"minutes"`
+		S   float64 `json:"seconds"`
+		H   string  `json:"hemisphere"`
+	}{
+		DD:  c.decimal(),
+		DMS: c.String(),
+		D:   c.d,
+		M:   c.m,
+		S:   c.s,
+		H:   string(c.h),
+	})
 }
 
 // decimal конвертирует координаты d/m/s в десятичные градусы.
@@ -36,8 +57,14 @@ func (c coordinate) decimal() float64 {
 
 func main() {
 	elysium := location{
-		lat:  coordinate{4, 30, 0.0, 'N'},
-		long: coordinate{135, 54, 0.0, 'E'},
+		Lat:  coordinate{4, 30, 0.0, 'N'},
+		Long: coordinate{135, 54, 0.0, 'E'},
 	}
-	fmt.Println("Elysium Planitia is at", elysium) // Выводит: Elysium Planitia is at 4°30’0.0” N, 135°54’0.0” E
+	bytes, err := json.MarshalIndent(elysium, "", "    ")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Println(string(bytes))
 }
