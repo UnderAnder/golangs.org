@@ -12,17 +12,18 @@ var (
 	ErrDigit  = errors.New("invalid digit")
 	ErrRules  = errors.New("Нарушение правил")
 )
+
 // Cell является зоной Судоку
 type Cell struct {
 	digit int8
 	fixed bool
 }
+
 // Grid является сеткой Судоку
 type Grid [rows][columns]Cell
 
 // SudokuError массив ошибок
 type SudokuError []error
-
 
 func (g *Grid) Set(row, column int, digit int8) error {
 	var errs SudokuError
@@ -87,19 +88,19 @@ func (se SudokuError) Error() string {
 	return strings.Join(s, ", ")
 }
 
-func NewSudoku(d [rows][columns]int8) *Grid{
+func NewSudoku(d [rows][columns]int8) *Grid {
 	var grid Grid
 	for i := 0; i < rows; i++ {
 		for j := 0; j < columns; j++ {
 			digit := d[i][j]
-			if digit != empty {
-                grid[i][j].digit = d
-                grid[i][j].fixed = true
-            }
-			
+			if digit != 0 {
+				grid[i][j].digit = digit
+				grid[i][j].fixed = true
+			}
+
 		}
-		
 	}
+	return &grid
 }
 
 func main() {
@@ -114,4 +115,6 @@ func main() {
 		{0, 0, 0, 4, 1, 9, 0, 0, 5},
 		{0, 0, 0, 0, 8, 0, 0, 7, 9},
 	})
+
+	s.Set(1, 2, 4)
 }
