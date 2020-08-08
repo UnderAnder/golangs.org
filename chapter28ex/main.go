@@ -4,7 +4,7 @@ import "fmt"
 
 type character struct {
 	name     string
-	lefthand item
+	leftHand *item
 }
 
 type item struct {
@@ -12,41 +12,48 @@ type item struct {
 }
 
 func (c *character) pickup(i *item) {
-	c.lefthand = *i
+	if c == nil || i == nil {
+		return
+	}
+	c.leftHand = i
 	fmt.Printf("%v взял в руку %v\n", c.name, i.name)
 }
 
-func (i *item) give(to *character) {
-	to.pickup(i)
-	fmt.Printf("")
+func (c *character) give(to *character) {
+	if c == nil || to == nil {
+		return
+	}
+	if c.leftHand == nil {
+		fmt.Printf("%v ничего не может дать\n", c.name)
+		return
+	}
+	if to.leftHand != nil {
+		fmt.Printf("%v с занятыми руками\n", to.name)
+		return
+	}
+	to.leftHand = c.leftHand
+	c.leftHand = nil
+
+	fmt.Printf("%v отдал %v %v\n", c.name, to.leftHand.name, to.name)
 }
 
-func (c *character) give(to *character) {
-	// if c.lefthand == nil {
-	// 	fmt.Println("Нечего отдавать")
-	// }
-	i := c.lefthand
-	i.give(to)
-	fmt.Printf("%v отдал %v %v\n", c.name, i.name, to.name)
+func (c character) String() string {
+	if c.leftHand == nil {
+		return fmt.Sprintf("%v ничего не несет", c.name)
+	}
+	return fmt.Sprintf("%v несет %v", c.name, c.leftHand.name)
 }
 
 func main() {
-	c := character{}
-	arthur := character{name: "Артур"}
-	knight := character{name: "Рыцарь"}
-	axe := item{name: "Топор"}
-	hammer := item{name: "Молот"}
-	sword := item{name: "Меч"}
+	arthur := &character{name: "Артур"}
+	knight := &character{name: "Рыцарь"}
+	sword := &item{name: "Меч"}
 
-	fmt.Print(c)
+	fmt.Println(arthur) // Выводит: Артур ничего не несет
+	fmt.Println(knight)
+	arthur.pickup(sword)
+	arthur.give(knight)
 
-	hammer.give(&c)
-	fmt.Print(c)
-
-	c.pickup(&axe)
-	fmt.Print(c)
-
-	arthur.pickup(&sword)
-	arthur.give(&knight)
-
+	fmt.Println(arthur)
+	fmt.Println(knight)
 }
