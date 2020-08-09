@@ -46,7 +46,7 @@ func (g *Grid) Set(row, column int, digit int8) error {
 	if g.inZone(row, column, digit) {
 		errs = append(errs, ZoneRules)
 	}
-	if !g.isFixed(row, column) {
+	if g.isFixed(row, column) {
 		errs = append(errs, FixedRules)
 	}
 	if len(errs) > 0 {
@@ -141,7 +141,7 @@ func main() {
 		{0, 0, 0, 0, 8, 0, 0, 7, 9},
 	})
 
-	err := s.Set(0, 3, 4)
+	err := s.Set(0, 2, 4)
 	if err != nil {
 		if errs, ok := err.(SudokuError); ok {
 			fmt.Printf("%d error(s) occurred:\n", len(errs))
@@ -149,5 +149,9 @@ func main() {
 				fmt.Printf("- %v\n", e)
 			}
 		}
+	}
+
+	for _, row := range s {
+		fmt.Println(row)
 	}
 }
