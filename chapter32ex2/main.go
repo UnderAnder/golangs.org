@@ -11,6 +11,8 @@ type command int
 const (
 	right = command(0)
 	left  = command(1)
+	start = command(3)
+	stop = command(4)
 )
 
 type RoverDriver struct {
@@ -45,7 +47,13 @@ func (r *RoverDriver) drive() {
 				direction = image.Point{
 					X: direction.Y,
 					Y: -direction.X,
-				}
+				}			
+			case start: // начало движения
+				direction = image.Point{X: 1, Y: 0}
+				log.Printf("начало движения %v", direction)
+			case stop:
+				direction = image.Point{X:0, Y:0}
+				log.Printf("остановка %v", direction)
 			}
 			log.Printf("new direction %v", direction)
 		case <-nextMove:
@@ -67,11 +75,11 @@ func (r *RoverDriver) Right() {
 }
 
 func (r *RoverDriver) Start() {
-
+	r.commandc <- start
 }
 
 func (r *RoverDriver) Stop() {
-
+	r.commandc <- stop
 }
 
 func main() {
@@ -79,6 +87,11 @@ func main() {
 	time.Sleep(3 * time.Second)
 	r.Left()
 	time.Sleep(3 * time.Second)
+	r.Stop()
+	time.Sleep(3 * time.Second)
 	r.Right()
 	time.Sleep(3 * time.Second)
+	r.Start()
+	time.Sleep(3 * time.Second)
+
 }
