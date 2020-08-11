@@ -39,6 +39,24 @@ func (o *Occupier) Pos() image.Point {
 	return o.pos
 }
 
+// Move перемещает occupier на другую клетку сетки
+// Сообщает, было ли перемещение успешным
+// Может не получиться, если пытается выйти за пределы
+// сетки или потому что пытается перместиться в клетку, что
+// уже занята. Если проваливается, occupier остается на прежнем месте
+func (o *Occupier) Move(p image.Point) bool {
+	newCell := o.grid.cell(p)
+	if newCell == nil || newCell.occupier != nil {
+		return false
+	}
+	//снимаем с текущей
+	o.grid.cell(o.pos).occupier = nil
+	//устанавливаем на новую
+	newCell.occupier = o
+	o.pos = p
+	return true
+}
+
 // Occupy занимает ячейку в данной точке сетки. Он
 // возвращает nil, если точка уже занята или точка
 // за пределами сетки. В противном случае возвращается значение, что
@@ -57,6 +75,9 @@ func (g *MarsGrid) Occupy(p image.Point) *Occupier {
 
 // возвращает клетку по ее координатам
 func (g *MarsGrid) cell(p image.Point) *cell {
+	if !p.In(g.bounds) {
+        return nil
+    }
 	return &g.cells[p.Y][p.X]
 }
 
@@ -77,21 +98,23 @@ func NewMarsGrid(size image.Point) *MarsGrid {
 	return grid
 }
 
-// Move перемещает occupier на другую клетку сетки
-// Сообщает, было ли перемещение успешным
-// Может не получиться, если пытается выйти за пределы
-// сетки или потому что пытается перместиться в клетку, что
-// уже занята. Если проваливается, occupier остается на прежнем месте
-//func (g *Occupier) Move(p image.Point) bool
-
 type RoverDriver struct {
 	commandc chan command
+	grid     *MarsGrid
 	occupier *Occupier
 }
 
-func NewRoverDriver(occupier *Occupier) *RoverDriver {
+func NewRoverDriver(grid *MarsGrid, occupier *Occupier) *RoverDriver {
+	if occupier == nil {
+		startPoint := image.Point{
+			X: rand.Intn(grid.Size().X),
+			Y: rand.Intn(grid.Size().Y),
+		}
+		occupier = grid.Occupy(startPoint)
+	}
 	r := &RoverDriver{
 		commandc: make(chan command),
+		grid:     grid,
 		occupier: occupier,
 	}
 	go r.drive()
@@ -101,7 +124,6 @@ func NewRoverDriver(occupier *Occupier) *RoverDriver {
 // drive ответственен за вождение марсохода. Ожидается
 // что он начнется в горутине.
 func (r *RoverDriver) drive() {
-	pos := r.occupier.Pos()
 	direction := image.Point{X: 1, Y: 0}
 	updateInterval := 250 * time.Millisecond
 	nextMove := time.After(updateInterval)
@@ -129,9 +151,23 @@ func (r *RoverDriver) drive() {
 			log.Printf("new direction %v", direction)
 
 		case <-nextMove:
-			pos = pos.Add(direction)
-			log.Printf("moved to %v", pos)
 			nextMove = time.After(updateInterval)
+			newPos := r.occupier.Pos().Add(direction)
+			if r.occupier.Move(newPos) {
+				log.Printf("перемещение на %v", newPos)
+				break
+			}
+			log.Printf("заблокирован при попытке перемещения из %v в %v", r.occupier.Pos(), newPos)
+			// Случайно выбирается одно из других случайных направлений
+			// Далее мы попробуем передвинуться в новое направление
+			dir := rand.Intn(3) + 1
+			for i := 0; i < dir; i++ {
+				direction = image.Point{
+					X: -direction.Y,
+					Y: direction.X,
+				}
+			}
+			log.Printf("новое случайное направление %v", direction)
 		}
 	}
 }
@@ -155,26 +191,13 @@ func (r *RoverDriver) Stop() {
 }
 
 func main() {
-	size := image.Point{X: 20, Y: 10}
+	size := image.Point{X: 10, Y: 10}
 	grid := NewMarsGrid(size)
 
-	var o *Occupier
-	// Попытка получить случайную точку продолжается до тех пор, пока не будет найдена та,
-	// что сейчас не занята
-	for o == nil {
-		startPoint := image.Point{
-			X: rand.Intn(grid.Size().X),
-			Y: rand.Intn(grid.Size().Y),
-		}
-		o = grid.Occupy(startPoint)
-	}
-	r := NewRoverDriver(o)
+	r := NewRoverDriver(grid, nil)
 	time.Sleep(3 * time.Second)
 	r.Left()
 	time.Sleep(3 * time.Second)
-	r.Stop()
+	r.Right()
 	time.Sleep(3 * time.Second)
-	r.Start()
-	time.Sleep(3 * time.Second)
-
 }
