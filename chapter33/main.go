@@ -64,6 +64,19 @@ func (g *MarsGrid) Size() image.Point {
 	return g.bounds.Max
 }
 
+func NewMarsGrid(size image.Point) *MarsGrid {
+	grid := &MarsGrid{
+		bounds: image.Rectangle{
+			Max: size,
+		},
+		cells: make([][]cell, size.Y),
+	}
+	for y := range grid.cells {
+		grid.cells[y] = make([]cell, size.X)
+	}
+	return grid
+}
+
 // Move перемещает occupier на другую клетку сетки
 // Сообщает, было ли перемещение успешным
 // Может не получиться, если пытается выйти за пределы
@@ -88,7 +101,7 @@ func NewRoverDriver(occupier *Occupier) *RoverDriver {
 // drive ответственен за вождение марсохода. Ожидается
 // что он начнется в горутине.
 func (r *RoverDriver) drive() {
-	pos := image.Point{X: 0, Y: 0}
+	pos := r.occupier.Pos()
 	direction := image.Point{X: 1, Y: 0}
 	updateInterval := 250 * time.Millisecond
 	nextMove := time.After(updateInterval)
@@ -114,6 +127,7 @@ func (r *RoverDriver) drive() {
 				log.Printf("остановка %v", direction)
 			}
 			log.Printf("new direction %v", direction)
+
 		case <-nextMove:
 			pos = pos.Add(direction)
 			log.Printf("moved to %v", pos)
@@ -141,24 +155,15 @@ func (r *RoverDriver) Stop() {
 }
 
 func main() {
-	var grid *MarsGrid
 	size := image.Point{X: 20, Y: 10}
-	grid = &MarsGrid{
-		bounds: image.Rectangle{
-			Max: size,
-		},
-		cells: make([][]cell, size.Y),
-	}
-	for y := range grid.cells {
-		grid.cells[y] = make([]cell, size.X)
-	}
+	grid := NewMarsGrid(size)
 
 	var o *Occupier
 	// Попытка получить случайную точку продолжается до тех пор, пока не будет найдена та,
 	// что сейчас не занята
 	for o == nil {
 		startPoint := image.Point{
-			X: rand.Intn(grid.Size().X), 
+			X: rand.Intn(grid.Size().X),
 			Y: rand.Intn(grid.Size().Y),
 		}
 		o = grid.Occupy(startPoint)
@@ -168,8 +173,6 @@ func main() {
 	r.Left()
 	time.Sleep(3 * time.Second)
 	r.Stop()
-	time.Sleep(3 * time.Second)
-	r.Right()
 	time.Sleep(3 * time.Second)
 	r.Start()
 	time.Sleep(3 * time.Second)
