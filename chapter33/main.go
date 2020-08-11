@@ -170,7 +170,6 @@ func (r *RoverDriver) drive() {
 			newPos := r.occupier.Pos().Add(direction)
 			if r.occupier.Move(newPos) {
 				log.Printf("%s перемещение на %v", r.name, newPos)
-				//r.occupier.grid.Show()
 				break
 			}
 			log.Printf("%s заблокирован при попытке перемещения из %v в %v", r.name, r.occupier.Pos(), newPos)
@@ -222,20 +221,4 @@ func clearScreen() {
 	cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
 	cmd.Stdout = os.Stdout
 	cmd.Run()
-}
-
-func (g MarsGrid) Show() {
-	clearScreen()
-	u := g.cells
-	for _, k := range u {
-		for _, v := range k {
-			if v.occupier != nil {
-				fmt.Printf("*")
-			} else {
-				fmt.Printf(" ")
-			}
-		}
-		fmt.Println()
-	}
-
 }
