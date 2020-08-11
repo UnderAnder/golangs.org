@@ -5,6 +5,8 @@ import (
 	"image"
 	"log"
 	"math/rand"
+	"os"
+	"os/exec"
 	"time"
 )
 
@@ -161,7 +163,8 @@ func (r *RoverDriver) drive() {
 			nextMove = time.After(updateInterval)
 			newPos := r.occupier.Pos().Add(direction)
 			if r.occupier.Move(newPos) {
-				log.Printf("%s перемещение на %v", r.name, newPos)
+				//log.Printf("%s перемещение на %v", r.name, newPos)
+				r.occupier.grid.Show()
 				break
 			}
 			log.Printf("%s заблокирован при попытке перемещения из %v в %v", r.name, r.occupier.Pos(), newPos)
@@ -206,4 +209,27 @@ func main() {
 		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid)
 	}
 	time.Sleep(60 * time.Second)
+}
+
+//Очищает экран терминала под виндой
+func clearScreen() {
+	cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
+
+func (g MarsGrid) Show() {
+	clearScreen()
+	u := g.cells
+	for _, k := range u {
+		for _, v := range k {
+			if v.occupier != nil {
+				fmt.Printf("*")
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Println()
+	}
+
 }
