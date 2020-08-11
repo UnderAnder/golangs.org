@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"log"
 	"math/rand"
@@ -76,8 +77,8 @@ func (g *MarsGrid) Occupy(p image.Point) *Occupier {
 // возвращает клетку по ее координатам
 func (g *MarsGrid) cell(p image.Point) *cell {
 	if !p.In(g.bounds) {
-        return nil
-    }
+		return nil
+	}
 	return &g.cells[p.Y][p.X]
 }
 
@@ -99,22 +100,27 @@ func NewMarsGrid(size image.Point) *MarsGrid {
 }
 
 type RoverDriver struct {
+	name     string
 	commandc chan command
-	grid     *MarsGrid
 	occupier *Occupier
 }
 
-func NewRoverDriver(grid *MarsGrid, occupier *Occupier) *RoverDriver {
-	if occupier == nil {
+func startDriver(name string, grid *MarsGrid) *RoverDriver {
+	var occupier *Occupier
+	for occupier == nil {
 		startPoint := image.Point{
 			X: rand.Intn(grid.Size().X),
 			Y: rand.Intn(grid.Size().Y),
 		}
 		occupier = grid.Occupy(startPoint)
 	}
+	return NewRoverDriver(name, occupier)
+}
+
+func NewRoverDriver(name string, occupier *Occupier) *RoverDriver {
 	r := &RoverDriver{
+		name:     name,
 		commandc: make(chan command),
-		grid:     grid,
 		occupier: occupier,
 	}
 	go r.drive()
@@ -124,6 +130,7 @@ func NewRoverDriver(grid *MarsGrid, occupier *Occupier) *RoverDriver {
 // drive ответственен за вождение марсохода. Ожидается
 // что он начнется в горутине.
 func (r *RoverDriver) drive() {
+	log.Printf("%s начальная позиция %v", r.name, r.occupier.Pos())
 	direction := image.Point{X: 1, Y: 0}
 	updateInterval := 250 * time.Millisecond
 	nextMove := time.After(updateInterval)
@@ -148,16 +155,16 @@ func (r *RoverDriver) drive() {
 				direction = image.Point{X: 0, Y: 0}
 				log.Printf("остановка %v", direction)
 			}
-			log.Printf("new direction %v", direction)
+			log.Printf("%s новое направление %v", r.name, direction)
 
 		case <-nextMove:
 			nextMove = time.After(updateInterval)
 			newPos := r.occupier.Pos().Add(direction)
 			if r.occupier.Move(newPos) {
-				log.Printf("перемещение на %v", newPos)
+				log.Printf("%s перемещение на %v", r.name, newPos)
 				break
 			}
-			log.Printf("заблокирован при попытке перемещения из %v в %v", r.occupier.Pos(), newPos)
+			log.Printf("%s заблокирован при попытке перемещения из %v в %v", r.name, r.occupier.Pos(), newPos)
 			// Случайно выбирается одно из других случайных направлений
 			// Далее мы попробуем передвинуться в новое направление
 			dir := rand.Intn(3) + 1
@@ -167,7 +174,7 @@ func (r *RoverDriver) drive() {
 					Y: direction.X,
 				}
 			}
-			log.Printf("новое случайное направление %v", direction)
+			log.Printf("%s новое случайное направление %v", r.name, direction)
 		}
 	}
 }
@@ -191,13 +198,12 @@ func (r *RoverDriver) Stop() {
 }
 
 func main() {
-	size := image.Point{X: 10, Y: 10}
+	size := image.Point{X: 20, Y: 10}
 	grid := NewMarsGrid(size)
 
-	r := NewRoverDriver(grid, nil)
-	time.Sleep(3 * time.Second)
-	r.Left()
-	time.Sleep(3 * time.Second)
-	r.Right()
-	time.Sleep(3 * time.Second)
+	rover := make([]*RoverDriver, 3)
+	for i := range rover {
+		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid)
+	}
+	time.Sleep(60 * time.Second)
 }
