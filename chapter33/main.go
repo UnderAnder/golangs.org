@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ const (
 // Марса. Может использовать конкурентно другой
 // горутиной.
 type MarsGrid struct {
+	mu     sync.Mutex
 	bounds image.Rectangle
 	cells  [][]cell
 }
@@ -48,6 +50,8 @@ func (o *Occupier) Pos() image.Point {
 // сетки или потому что пытается перместиться в клетку, что
 // уже занята. Если проваливается, occupier остается на прежнем месте
 func (o *Occupier) Move(p image.Point) bool {
+	o.grid.mu.Lock()
+	defer o.grid.mu.Unlock()
 	newCell := o.grid.cell(p)
 	if newCell == nil || newCell.occupier != nil {
 		return false
@@ -65,6 +69,8 @@ func (o *Occupier) Move(p image.Point) bool {
 // за пределами сетки. В противном случае возвращается значение, что
 // можно переместить в другое место сетки.
 func (g *MarsGrid) Occupy(p image.Point) *Occupier {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	cell := g.cell(p)
 	if cell == nil || cell.occupier != nil {
 		return nil
@@ -163,8 +169,8 @@ func (r *RoverDriver) drive() {
 			nextMove = time.After(updateInterval)
 			newPos := r.occupier.Pos().Add(direction)
 			if r.occupier.Move(newPos) {
-				//log.Printf("%s перемещение на %v", r.name, newPos)
-				r.occupier.grid.Show()
+				log.Printf("%s перемещение на %v", r.name, newPos)
+				//r.occupier.grid.Show()
 				break
 			}
 			log.Printf("%s заблокирован при попытке перемещения из %v в %v", r.name, r.occupier.Pos(), newPos)
@@ -201,14 +207,14 @@ func (r *RoverDriver) Stop() {
 }
 
 func main() {
-	size := image.Point{X: 20, Y: 10}
+	size := image.Point{X: 20, Y: 20}
 	grid := NewMarsGrid(size)
 
-	rover := make([]*RoverDriver, 3)
+	rover := make([]*RoverDriver, 8)
 	for i := range rover {
 		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid)
 	}
-	time.Sleep(60 * time.Second)
+	time.Sleep(6 * time.Second)
 }
 
 //Очищает экран терминала под виндой
