@@ -64,10 +64,16 @@ func (o *Occupier) Move(p image.Point) bool {
 }
 
 func (r *RoverDriver) checkLife() {
-	if r.occupier.getSensorData() < 900 {
+	sensorData := r.occupier.getSensorData()
+	if sensorData < 900 {
 		return
 	}
-	// TODO: отправить сообщение на Землю
+	m := message{
+		rover:   r.name,
+		lifesig: sensorData,
+		pos:     r.occupier.Pos(),
+	}
+	r.radio.sendMessage(m)
 }
 
 func (o *Occupier) getSensorData() int {
@@ -127,6 +133,7 @@ type RoverDriver struct {
 	name     string
 	commandc chan command
 	occupier *Occupier
+	radio    *radio
 }
 
 func startDriver(name string, grid *MarsGrid) *RoverDriver {
@@ -186,6 +193,7 @@ func (r *RoverDriver) drive() {
 			newPos := r.occupier.Pos().Add(direction)
 			if r.occupier.Move(newPos) {
 				log.Printf("%s перемещение на %v", r.name, newPos)
+				r.checkLife()
 				break
 			}
 			log.Printf("%s заблокирован при попытке перемещения из %v в %v", r.name, r.occupier.Pos(), newPos)
@@ -219,6 +227,20 @@ func (r *RoverDriver) Start() {
 
 func (r *RoverDriver) Stop() {
 	r.commandc <- stop
+}
+
+type message struct {
+	rover   string
+	lifesig int
+	pos     image.Point
+}
+
+type radio struct {
+	fromRover chan message
+}
+
+func (r *radio) sendMessage(m message) {
+	r.fromRover <- m
 }
 
 func main() {
