@@ -270,7 +270,7 @@ func (r *radio) run(toEarth chan []message) {
 
 const (
 	// Длина марсианского дня
-	dayLength = 24 * time.Second
+	dayLength = 10 * time.Second
 	// Продолжительность, во время которого
 	// сообщения можно передать с марсохода до Земли
 	receiveTimePerDay = 2 * time.Second
@@ -286,7 +286,7 @@ func receiveMarsMessages(msgc chan []message) {
 			return
 		case ms := <-msgc:
 			for _, m := range ms {
-				log.Printf("земля получает доклад об уровне жизни %d из %s в %v", m.lifesig, m.rover, m.pos)
+				log.Printf("Земля получает доклад об уровне жизни %d из %s в %v", m.lifesig, m.rover, m.pos)
 			}
 		}
 	}
@@ -308,9 +308,9 @@ func main() {
 	radioChan := make(chan []message)
 	go earthReceiver(radioChan)
 
-	rover := make([]*RoverDriver, 8)
+	rover := make([]*RoverDriver, 4)
 	for i := range rover {
 		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid, radioChan)
 	}
-	time.Sleep(6 * time.Second)
+	time.Sleep(20 * time.Second)
 }
