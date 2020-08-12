@@ -5,8 +5,6 @@ import (
 	"image"
 	"log"
 	"math/rand"
-	"os"
-	"os/exec"
 	"sync"
 	"time"
 )
@@ -30,7 +28,7 @@ type MarsGrid struct {
 }
 
 type cell struct {
-	lifesig int
+	lifesig  int
 	occupier *Occupier
 }
 
@@ -63,6 +61,19 @@ func (o *Occupier) Move(p image.Point) bool {
 	newCell.occupier = o
 	o.pos = p
 	return true
+}
+
+func (r *RoverDriver) checkLife() {
+	if r.occupier.getSensorData() < 900 {
+		return
+	}
+	// TODO: отправить сообщение на Землю
+}
+
+func (o *Occupier) getSensorData() int {
+	o.grid.mu.Lock()
+	defer o.grid.mu.Unlock()
+	return o.grid.cell(o.pos).lifesig
 }
 
 // Occupy занимает ячейку в данной точке сетки. Он
@@ -105,9 +116,9 @@ func NewMarsGrid(size image.Point) *MarsGrid {
 	for y := range grid.cells {
 		grid.cells[y] = make([]cell, size.X)
 		for x := range grid.cells[y] {
-            cell := &grid.cells[y][x]
-            cell.lifesig = rand.Intn(1000)
-        }
+			cell := &grid.cells[y][x]
+			cell.lifesig = rand.Intn(1000)
+		}
 	}
 	return grid
 }
