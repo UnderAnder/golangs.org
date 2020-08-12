@@ -30,6 +30,7 @@ type MarsGrid struct {
 }
 
 type cell struct {
+	lifesig int
 	occupier *Occupier
 }
 
@@ -103,6 +104,10 @@ func NewMarsGrid(size image.Point) *MarsGrid {
 	}
 	for y := range grid.cells {
 		grid.cells[y] = make([]cell, size.X)
+		for x := range grid.cells[y] {
+            cell := &grid.cells[y][x]
+            cell.lifesig = rand.Intn(1000)
+        }
 	}
 	return grid
 }
@@ -214,11 +219,4 @@ func main() {
 		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid)
 	}
 	time.Sleep(6 * time.Second)
-}
-
-//Очищает экран терминала под виндой
-func clearScreen() {
-	cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
-	cmd.Stdout = os.Stdout
-	cmd.Run()
 }
