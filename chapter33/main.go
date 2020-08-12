@@ -123,7 +123,7 @@ func NewMarsGrid(size image.Point) *MarsGrid {
 		grid.cells[y] = make([]cell, size.X)
 		for x := range grid.cells[y] {
 			cell := &grid.cells[y][x]
-			cell.lifesig = rand.Intn(1000)
+			cell.lifesig = rand.Intn(500) + 500
 		}
 	}
 	return grid
@@ -148,12 +148,12 @@ func startDriver(name string, grid *MarsGrid, radioChan chan []message) *RoverDr
 	return NewRoverDriver(name, occupier, radioChan)
 }
 
-func NewRoverDriver(name string, occupier *Occupier, marsToEarth chan []message) *RoverDriver {
+func NewRoverDriver(name string, occupier *Occupier, radioChan chan []message) *RoverDriver {
 	r := &RoverDriver{
 		name:     name,
 		commandc: make(chan command),
 		occupier: occupier,
-		radio:    newRadio(marsToEarth),
+		radio:    newRadio(radioChan),
 	}
 	go r.drive()
 	return r
@@ -268,10 +268,45 @@ func (r *radio) run(toEarth chan []message) {
 	}
 }
 
+const (
+	// Длина марсианского дня
+	dayLength = 24 * time.Second
+	// Продолжительность, во время которого
+	// сообщения можно передать с марсохода до Земли
+	receiveTimePerDay = 2 * time.Second
+)
+
+// receiveMarsMessages получает сообщения, отправленные с Марса
+// для данной продолжительности
+func receiveMarsMessages(msgc chan []message) {
+	finished := time.After(receiveTimePerDay)
+	for {
+		select {
+		case <-finished:
+			return
+		case ms := <-msgc:
+			for _, m := range ms {
+				log.Printf("земля получает доклад об уровне жизни %d из %s в %v", m.lifesig, m.rover, m.pos)
+			}
+		}
+	}
+}
+
+// earthReceiver получает сообщения, отправленные с Марса
+// Так как связь ограничена, принимаются только сообщения
+// для некоторого часа марсианского дня
+func earthReceiver(msgc chan []message) {
+	for {
+		time.Sleep(dayLength - receiveTimePerDay)
+		receiveMarsMessages(msgc)
+	}
+}
+
 func main() {
 	size := image.Point{X: 20, Y: 20}
 	grid := NewMarsGrid(size)
 	radioChan := make(chan []message)
+	go earthReceiver(radioChan)
 
 	rover := make([]*RoverDriver, 8)
 	for i := range rover {
