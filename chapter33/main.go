@@ -136,7 +136,7 @@ type RoverDriver struct {
 	radio    *radio
 }
 
-func startDriver(name string, grid *MarsGrid) *RoverDriver {
+func startDriver(name string, grid *MarsGrid, radioChan chan []message) *RoverDriver {
 	var occupier *Occupier
 	for occupier == nil {
 		startPoint := image.Point{
@@ -145,14 +145,15 @@ func startDriver(name string, grid *MarsGrid) *RoverDriver {
 		}
 		occupier = grid.Occupy(startPoint)
 	}
-	return NewRoverDriver(name, occupier)
+	return NewRoverDriver(name, occupier, radioChan)
 }
 
-func NewRoverDriver(name string, occupier *Occupier) *RoverDriver {
+func NewRoverDriver(name string, occupier *Occupier, marsToEarth chan []message) *RoverDriver {
 	r := &RoverDriver{
 		name:     name,
 		commandc: make(chan command),
 		occupier: occupier,
+		radio:    newRadio(marsToEarth),
 	}
 	go r.drive()
 	return r
@@ -243,13 +244,38 @@ func (r *radio) sendMessage(m message) {
 	r.fromRover <- m
 }
 
+func newRadio(toEarth chan []message) *radio {
+	r := &radio{
+		fromRover: make(chan message),
+	}
+	go r.run(toEarth)
+	return r
+}
+
+func (r *radio) run(toEarth chan []message) {
+	var buffered []message
+	for {
+		toEarth1 := toEarth
+		if len(buffered) == 0 {
+			toEarth1 = nil
+		}
+		select {
+		case m := <-r.fromRover:
+			buffered = append(buffered, m)
+		case toEarth1 <- buffered:
+			buffered = nil
+		}
+	}
+}
+
 func main() {
 	size := image.Point{X: 20, Y: 20}
 	grid := NewMarsGrid(size)
+	radioChan := make(chan []message)
 
 	rover := make([]*RoverDriver, 8)
 	for i := range rover {
-		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid)
+		rover[i] = startDriver(fmt.Sprint("Марсоход ", i), grid, radioChan)
 	}
 	time.Sleep(6 * time.Second)
 }
